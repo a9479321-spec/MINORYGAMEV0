@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import messagebox
 import random
 import time
+from pathlib import Path
 from card import Card
 
 
@@ -39,6 +40,8 @@ class MemoryGame:
         self.lock = False
         self.start_time = time.time()
 
+        self.card_images = self.load_card_images()
+
         # 上方資訊框架
         top_frame = tk.Frame(root)
         top_frame.pack()
@@ -58,6 +61,61 @@ class MemoryGame:
 
         self.create_cards()
         self.update_timer()
+
+    def load_card_images(self):
+        """載入卡片圖像資源"""
+        images = {}
+        image_dir = Path(__file__).resolve().parent / "poker_images"
+        value_map = {
+            "A": 1,
+            "2": 2,
+            "3": 3,
+            "4": 4,
+            "5": 5,
+            "6": 6,
+            "7": 7,
+            "8": 8,
+            "9": 9,
+            "10": 10,
+            "J": 11,
+            "Q": 12,
+            "K": 13,
+        }
+
+        back_path = image_dir / "pokerbk.jpg"
+        if not back_path.exists():
+            raise FileNotFoundError(
+                f"找不到卡片背面圖像: {back_path}"
+            )
+
+        try:
+            from PIL import Image, ImageTk
+        except ImportError as exc:
+            raise ImportError(
+                "請安裝 Pillow 才能載入 JPG 卡片圖像。" \
+                "(pip install pillow)"
+            ) from exc
+
+        back_image = ImageTk.PhotoImage(
+            Image.open(back_path).resize((100, 140), Image.Resampling.LANCZOS)
+        )
+
+        for value, index in value_map.items():
+            if value == "K":
+                continue
+
+            image_path = image_dir / f"poker{index}.jpg"
+            if not image_path.exists():
+                raise FileNotFoundError(
+                    f"找不到卡片正面圖像: {image_path}"
+                )
+
+            images[value] = ImageTk.PhotoImage(
+                Image.open(image_path).resize((100, 140), Image.Resampling.LANCZOS)
+            )
+
+        images["BACK"] = back_image
+        return images
 
     def create_cards(self):
         """建立遊戲卡片"""
@@ -82,7 +140,9 @@ class MemoryGame:
                 card = Card(
                     self.frame,
                     cards[index],
-                    self
+                    self,
+                    front_image=self.card_images[cards[index]],
+                    back_image=self.card_images["BACK"]
                 )
 
                 card.grid(
