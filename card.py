@@ -18,7 +18,7 @@ class Card(tk.Button):
     繼承 tk.Button，表示遊戲中的單張卡片
     """
 
-    def __init__(self, master, value, game, front_image=None, back_image=None, **kwargs):
+    def __init__(self, master, value, game, front_image=None, back_image=None, clear_image=None, **kwargs):
         """
         初始化卡片
 
@@ -32,10 +32,9 @@ class Card(tk.Button):
         """
         super().__init__(
             master,
-            width=8,
-            height=4,
-            font=("Arial", 16),
             command=self.click_card,
+            borderwidth=2,
+            compound="center",
             **kwargs
         )
 
@@ -43,6 +42,9 @@ class Card(tk.Button):
         self.game = game
         self.front_image = front_image
         self.back_image = back_image
+        self.clear_image = clear_image
+
+        self.config(padx=0, pady=0)
 
         self.is_flipped = False
         self.is_matched = False
@@ -55,9 +57,21 @@ class Card(tk.Button):
             return
 
         if self.back_image is not None:
-            self.config(image=self.back_image, text="")
+            self.config(
+                image=self.back_image,
+                text="",
+                padx=0,
+                pady=0
+            )
         else:
-            self.config(text="❓", image="")
+            self.config(
+                text="❓",
+                image="",
+                width=80,
+                height=110,
+                padx=0,
+                pady=0
+            )
 
         self.config(state="normal")
         self.is_flipped = False
@@ -65,20 +79,40 @@ class Card(tk.Button):
     def show_front(self):
         """顯示卡片正面"""
         if self.front_image is not None:
-            self.config(image=self.front_image, text="")
+            self.config(
+                image=self.front_image,
+                text="",
+                padx=0,
+                pady=0
+            )
         else:
-            self.config(text=self.value, image="")
+            self.config(
+                text=self.value,
+                image="",
+                width=80,
+                height=110,
+                padx=0,
+                pady=0
+            )
 
         self.is_flipped = True
 
     def clear_card(self):
         """清除卡片(配對成功時調用)"""
-        self.config(
-            image="",
-            text="",
-            state="disabled",
-            bg="lightgray"
-        )
+        if self.clear_image is not None:
+            self.config(
+                image=self.clear_image,
+                text="",
+                state="disabled",
+                bg="#6c6c6c"
+            )
+        else:
+            self.config(
+                image="",
+                text="",
+                state="disabled",
+                bg="#6c6c6c"
+            )
         self.is_matched = True
 
     def click_card(self):

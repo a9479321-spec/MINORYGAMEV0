@@ -33,6 +33,12 @@ class MemoryGame:
         self.root.geometry(
             "700x550"
         )
+        self.bg_color = "#2b2b2b"
+        self.card_bg = "#2b2b2b"
+        self.card_active_bg = "#3c3c3c"
+        self.clear_bg = "#6c6c6c"
+
+        self.root.configure(bg=self.bg_color)
 
         # 遊戲狀態
         self.first_card = None
@@ -43,19 +49,21 @@ class MemoryGame:
         self.card_images = self.load_card_images()
 
         # 上方資訊框架
-        top_frame = tk.Frame(root)
+        top_frame = tk.Frame(root, bg=self.bg_color)
         top_frame.pack()
 
         self.time_label = tk.Label(
             top_frame,
             text="時間:0 秒",
-            font=("Arial", 16)
+            font=("Arial", 16),
+            bg=self.bg_color,
+            fg="white"
         )
         self.time_label.pack()
 
         # 卡片區框架
-        self.frame = tk.Frame(root)
-        self.frame.pack()
+        self.frame = tk.Frame(root, bg=self.bg_color)
+        self.frame.pack(padx=10, pady=10)
 
         self.card_list = []
 
@@ -89,16 +97,30 @@ class MemoryGame:
             )
 
         try:
-            from PIL import Image, ImageTk
+            from PIL import Image, ImageTk, ImageOps
         except ImportError as exc:
             raise ImportError(
                 "請安裝 Pillow 才能載入 JPG 卡片圖像。" \
                 "(pip install pillow)"
             ) from exc
 
-        back_image = ImageTk.PhotoImage(
-            Image.open(back_path).resize((100, 140), Image.Resampling.LANCZOS)
+        target_size = (80, 110)
+        resample_method = (
+            Image.Resampling.LANCZOS
+            if hasattr(Image, "Resampling")
+            else Image.LANCZOS
         )
+
+        def load_fixed_image(path):
+            source = Image.open(path).convert("RGBA")
+            source.thumbnail(target_size, resample_method)
+            background = Image.new("RGBA", target_size, (43, 43, 43, 255))
+            x = (target_size[0] - source.width) // 2
+            y = (target_size[1] - source.height) // 2
+            background.paste(source, (x, y), source)
+            return ImageTk.PhotoImage(background)
+
+        back_image = load_fixed_image(back_path)
 
         for value, index in value_map.items():
             if value == "K":
@@ -110,11 +132,15 @@ class MemoryGame:
                     f"找不到卡片正面圖像: {image_path}"
                 )
 
-            images[value] = ImageTk.PhotoImage(
-                Image.open(image_path).resize((100, 140), Image.Resampling.LANCZOS)
-            )
+            images[value] = load_fixed_image(image_path)
 
         images["BACK"] = back_image
+
+        # 製作配對成功後的清除佔位圖（灰底，與卡片尺寸相同）
+        clear_bg = (108, 108, 108, 255)  # #6c6c6c
+        clear_img = Image.new("RGBA", target_size, clear_bg)
+        images["CLEAR"] = ImageTk.PhotoImage(clear_img)
+
         return images
 
     def create_cards(self):
@@ -142,7 +168,13 @@ class MemoryGame:
                     cards[index],
                     self,
                     front_image=self.card_images[cards[index]],
-                    back_image=self.card_images["BACK"]
+                    back_image=self.card_images["BACK"],
+                    clear_image=self.card_images["CLEAR"],
+                    bg=self.card_bg,
+                    activebackground=self.card_active_bg,
+                    highlightthickness=0,
+                    bd=0,
+                    relief="flat"
                 )
 
                 card.grid(
