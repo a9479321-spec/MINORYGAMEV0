@@ -3,6 +3,8 @@ from tkinter import messagebox
 import random
 import time
 
+#
+#author: s1141376 Shi
 
 ####################################
 # Card 類別
